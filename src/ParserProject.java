@@ -16,10 +16,12 @@ public class ParserProject {
 
 class Parser{
     char lookahead;
+    int character;
     DataInputStream a;
 
     Parser(DataInputStream a){
         this.a = a;
+        this.character = 1;
         try {
             lookahead = (char) a.read();
         } catch (IOException e) {
@@ -28,18 +30,23 @@ class Parser{
     }
 
     int Parse() throws ParseException{
+        int exp;
         try {
-            return Exp();
+            exp = Exp();
         } catch (ParseException e) {
-            throw new ParseException("Parsing failed",1);
+            throw new ParseException(e.getMessage(),1);
         }
+        if(lookahead != '\n')
+            throw new ParseException("Error at column: " + this.character, 1);
+        return exp;
     }
 
     void consume(int symbol) throws ParseException,IOException{
         if(lookahead != symbol) {
             System.out.println(lookahead);
-            throw new ParseException("Unexpected symbol found", 1);
+            throw new ParseException("Error at column: " + this.character, 1);
         }
+        this.character++;
         lookahead = (char) a.read();
     }
 
@@ -49,7 +56,7 @@ class Parser{
             term = Term();
             return Rest(term);
         } catch (ParseException e) {
-            throw new ParseException("Exp failed",1);
+            throw new ParseException(e.getMessage(),1);
         }
     }
 
@@ -58,12 +65,12 @@ class Parser{
             try {
                 this.consume(lookahead);
             } catch (ParseException | IOException e) {
-                throw new ParseException("Rest failed",1);
+                throw new ParseException(e.getMessage(),1);
             }
             try {
                 term += Term();
             } catch (ParseException e) {
-                e.printStackTrace();
+                throw new ParseException(e.getMessage(),1);
             }
             return Rest(term);
         }
@@ -71,12 +78,12 @@ class Parser{
             try {
                 this.consume(lookahead);
             } catch (ParseException | IOException e) {
-                e.printStackTrace();
+                throw new ParseException(e.getMessage(),1);
             }
             try {
                 term -= Term();
             } catch (ParseException e) {
-                e.printStackTrace();
+                throw new ParseException(e.getMessage(),1);
             }
             return Rest(term);
         }
@@ -90,8 +97,7 @@ class Parser{
             factor = Factor();
             return Term2(factor);
         } catch (ParseException e) {
-            e.printStackTrace();
-            throw new ParseException("Term failed",1);
+            throw new ParseException(e.getMessage(),1);
         }
     }
 
@@ -100,12 +106,12 @@ class Parser{
             try {
                 this.consume(lookahead);
             } catch (ParseException | IOException e) {
-                e.printStackTrace();
+                throw new ParseException(e.getMessage(),1);
             }
             try {
                 factor *= Factor();
             } catch (ParseException e) {
-                throw new ParseException("Term2 failed",1);
+                throw new ParseException(e.getMessage(),1);
             }
             return Term2(factor);
         }
@@ -113,12 +119,12 @@ class Parser{
             try {
                 this.consume(lookahead);
             } catch (ParseException | IOException e) {
-                e.printStackTrace();
+                throw new ParseException(e.getMessage(),1);
             }
             try {
                 factor /= Factor();
             } catch (ParseException e) {
-                throw new ParseException("Term2 failed",1);
+                throw new ParseException(e.getMessage(),1);
             }
             return Term2(factor);
         }
@@ -131,13 +137,13 @@ class Parser{
             try {
                 this.consume(lookahead);
             } catch (ParseException | IOException e) {
-                e.printStackTrace();
+                throw new ParseException(e.getMessage(),1);
             }
             int result = Exp();
             try {
                 this.consume(')');
             } catch (ParseException | IOException e) {
-                e.printStackTrace();
+                throw new ParseException(e.getMessage(),1);
             }
             return result;
         }
@@ -147,7 +153,7 @@ class Parser{
                     this.consume(lookahead);
                     return value;
                 } catch (ParseException | IOException e) {
-                    throw new ParseException("Could not read symbol",1);
+                    throw new ParseException("Error at column: " + this.character,1);
                 }
         }
         else
